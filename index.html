@@ -1,0 +1,517 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Bear Claw Arcade</title>
+  <style>
+    :root {
+      --navy: #202853;
+      --ink: #182246;
+      --muted: #7280a8;
+      --pink: #f9689b;
+      --pink-dark: #d94c7f;
+      --yellow: #ffd15b;
+      --mint: #d9f4e8;
+      --lavender: #ebe8ff;
+      --paper: #fffdf9;
+      --line: #e6e8f1;
+      --machine-pink: #d66da8;
+      --machine-pink-deep: #bd4c91;
+      --blue: #a8d9ff;
+      --view-turn: 0deg;
+      --claw-x: 0%;
+      --claw-z: 0%;
+      --claw-y: 0px;
+      --claw-depth: 0px;
+      --claw-scale: 1;
+    }
+
+    * { box-sizing: border-box; }
+    html { min-width: 320px; background: #111a36; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 8% 8%, rgba(255, 229, 157, .3), transparent 19rem),
+        radial-gradient(circle at 94% 28%, rgba(216, 242, 232, .4), transparent 22rem),
+        #f8f7f4;
+      font-family: ui-rounded, "Trebuchet MS", "Avenir Next", system-ui, sans-serif;
+    }
+    button { font: inherit; color: inherit; }
+    .app { max-width: 1420px; margin: 0 auto; padding: 24px 30px 36px; }
+    .topbar { display: flex; justify-content: space-between; align-items: center; gap: 20px; }
+    .brand { display: flex; align-items: center; gap: 12px; }
+    .brand-mark { width: 40px; height: 40px; display: grid; place-items: center; border-radius: 13px; background: var(--pink); color: white; font-size: 24px; box-shadow: 0 5px 0 #e84f89; transform: rotate(-6deg); }
+    .brand-copy { line-height: 1.05; }
+    .brand-copy strong { display: block; font-size: 16px; letter-spacing: -.3px; }
+    .brand-copy span { color: var(--muted); font-size: 11px; font-weight: 700; letter-spacing: .5px; }
+    .coin-pill { display: flex; align-items: center; gap: 9px; padding: 8px 12px 8px 8px; border: 1px solid var(--line); border-radius: 999px; background: white; box-shadow: 0 4px 15px rgba(38, 49, 93, .05); font-size: 12px; font-weight: 800; }
+    .coin { width: 25px; height: 25px; display: grid; place-items: center; border: 2px solid #e9a92e; border-radius: 50%; background: #ffd35a; color: #93681c; font-size: 12px; }
+    .balance { color: var(--navy); font-variant-numeric: tabular-nums; }
+
+    .hero { margin: 30px 0 26px; display: flex; justify-content: space-between; gap: 30px; align-items: end; }
+    .eyebrow { margin: 0 0 7px; color: var(--pink-dark); font-size: 11px; text-transform: uppercase; letter-spacing: 2.2px; font-weight: 900; }
+    h1 { margin: 0; max-width: 690px; font-size: clamp(34px, 5vw, 64px); line-height: .98; letter-spacing: -3px; color: var(--navy); }
+    .hero p { max-width: 330px; margin: 0 3px 4px 0; color: var(--muted); font-size: 14px; line-height: 1.55; font-weight: 650; }
+    .hero p b { color: var(--pink-dark); }
+
+    .game-shell { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(300px, .8fr); gap: 18px; align-items: stretch; }
+    .machine-card, .control-card { border: 1px solid rgba(230, 232, 241, .85); border-radius: 28px; background: rgba(255,255,255,.83); box-shadow: 0 22px 60px rgba(38, 49, 93, .08); }
+    .machine-card { min-height: 720px; padding: 0; overflow: hidden; position: relative; background: #87c8ed; border-color: rgba(255,255,255,.35); box-shadow: 0 28px 75px rgba(7, 19, 54, .23); }
+    .machine-head { position: absolute; top: 22px; left: 22px; right: 22px; display: flex; justify-content: space-between; align-items: center; gap: 10px; z-index: 8; color: #20365f; }
+    .machine-head h2 { margin: 0; font-size: 14px; letter-spacing: -.3px; }
+    .live-badge { display: flex; align-items: center; gap: 6px; color: #5d6b91; font-size: 11px; font-weight: 800; }
+    .live-dot { width: 7px; height: 7px; border-radius: 50%; background: #64d7a6; box-shadow: 0 0 0 4px #e1f8ed; }
+    .machine-stage { min-height: 720px; height: 100%; position: relative; display: grid; place-items: center; perspective: 1100px; overflow: hidden; cursor: grab; touch-action: none; }
+    .machine-stage.is-dragging { cursor: grabbing; }
+    .machine-stage:before { content: ""; position: absolute; width: 100%; height: 58%; left: 0; bottom: 0; background: linear-gradient(180deg, transparent, rgba(27, 58, 113, .11)); pointer-events: none; z-index: 2; }
+    .machine-stage:after { content: ""; position: absolute; left: 0; right: 0; bottom: 31%; height: 2px; background: rgba(255,255,255,.45); box-shadow: 0 2px 15px rgba(58, 118, 166, .5); z-index: 1; }
+    .world-sun { position: absolute; top: 14%; right: 10%; width: 82px; aspect-ratio: 1; border-radius: 50%; background: #ffe89a; box-shadow: 0 0 0 18px rgba(255, 232, 154, .15), 0 0 60px rgba(255, 239, 182, .8); z-index: 0; }
+    .world-cloud { position: absolute; width: 130px; height: 28px; border-radius: 99px; background: rgba(255,255,255,.45); filter: blur(1px); z-index: 0; }
+    .world-cloud:before, .world-cloud:after { content: ""; position: absolute; bottom: 0; border-radius: 50%; background: inherit; }
+    .world-cloud:before { left: 25px; width: 52px; height: 52px; } .world-cloud:after { right: 19px; width: 42px; height: 42px; }
+    .cloud-one { top: 24%; left: 9%; transform: scale(.8); } .cloud-two { top: 18%; left: 48%; transform: scale(.48); opacity: .68; }
+    .baseplate { position: absolute; width: 170%; height: 82%; left: -35%; bottom: -36%; transform: rotateX(59deg) translateZ(-120px); transform-style: preserve-3d; background: linear-gradient(145deg, #76b5d5, #4384ba); border: 5px solid #31699d; box-shadow: inset 0 0 0 3px rgba(255,255,255,.19), 0 -18px 30px rgba(28, 76, 123, .23), 0 25px 0 #244e82; z-index: 1; }
+    .baseplate:before { content: ""; position: absolute; inset: 0; background-image: linear-gradient(rgba(255,255,255,.19) 2px, transparent 2px), linear-gradient(90deg, rgba(255,255,255,.19) 2px, transparent 2px); background-size: 68px 68px; opacity: .65; }
+    .baseplate:after { content: "BASEPLATE • WORLD 01"; position: absolute; left: 4%; bottom: 5%; color: rgba(255,255,255,.55); font: 900 12px/1 system-ui, sans-serif; letter-spacing: 2px; transform: rotate(-5deg); }
+    .baseplate-shadow { position: absolute; width: 440px; height: 88px; left: 50%; bottom: 18%; transform: translateX(-50%) rotateX(74deg); border-radius: 50%; background: rgba(16, 47, 86, .28); filter: blur(14px); z-index: 2; }
+    .machine { position: relative; width: min(64%, 510px); aspect-ratio: .86; transform-style: preserve-3d; transform: rotateY(var(--view-turn)) rotateX(3deg) translateZ(-25px) scale(1); transition: transform .62s cubic-bezier(.2,.75,.2,1); z-index: 4; }
+    .machine-depth { position: absolute; inset: 0; transform-style: preserve-3d; pointer-events: none; z-index: 0; }
+    .machine-depth .depth-right { position: absolute; left: 98%; top: 5%; width: 20%; height: 86%; transform-origin: left center; transform: rotateY(76deg) skewY(-8deg); border-radius: 0 18px 26px 0; background: linear-gradient(90deg, #8d2f75, #bb4a91 48%, #702560); box-shadow: inset -7px 0 0 rgba(255,255,255,.1), 17px 18px 18px rgba(23, 22, 63, .27); }
+    .machine-depth .depth-left { position: absolute; right: 98%; top: 6%; width: 10%; height: 84%; transform-origin: right center; transform: rotateY(-76deg) skewY(8deg); border-radius: 18px 0 0 24px; background: linear-gradient(90deg, #722560, #ac3f85); box-shadow: inset 6px 0 0 rgba(255,255,255,.08); }
+    .machine-depth .depth-top { position: absolute; left: 4%; right: 4%; top: -8%; height: 13%; transform-origin: bottom center; transform: rotateX(64deg); border-radius: 20px 20px 6px 6px; background: linear-gradient(180deg, #f58bc2, #bd4c91); box-shadow: inset 0 6px 0 rgba(255,255,255,.18), 0 -5px 13px rgba(58, 24, 83, .19); }
+    .machine-depth .depth-back { position: absolute; inset: 4% 0 5%; transform: translateZ(-32px); border-radius: 28px 28px 34px 34px; background: #7d286f; box-shadow: 0 26px 30px rgba(22, 24, 63, .25); }
+    .machine-back { position: absolute; inset: 0; transform: rotateY(180deg) translateZ(4px); transform-style: preserve-3d; backface-visibility: visible; border-radius: 28px 28px 36px 36px; background: linear-gradient(90deg, #a23b80, #d15c9d 25%, #d15c9d 74%, #9a347a); box-shadow: inset -11px 0 0 rgba(255,255,255,.1), inset 10px 0 0 rgba(74, 24, 75, .18), 0 20px 26px rgba(30, 20, 65, .22); z-index: 2; }
+    .machine-back:before { content: "BEAR DROP"; position: absolute; left: 6%; right: 6%; top: 3%; height: 10%; display: grid; place-items: center; border-radius: 18px; background: #e878b3; color: #fff6fc; font-size: clamp(13px, 2.1vw, 19px); font-weight: 1000; letter-spacing: 2.5px; text-shadow: 0 2px 0 #a83c7f; box-shadow: inset 0 -5px 0 rgba(155, 49, 111, .15); }
+    .rear-glass { position: absolute; left: 10%; right: 10%; top: 15%; height: 59%; border: 9px solid #943878; border-radius: 13px 13px 22px 22px; background: linear-gradient(135deg, rgba(226, 249, 255, .5), rgba(140, 205, 234, .2) 46%, rgba(255,255,255,.3)); box-shadow: inset 0 0 0 2px rgba(255,255,255,.38), inset -12px 0 25px rgba(255,255,255,.12), 0 8px 0 rgba(88, 31, 99, .38); overflow: hidden; }
+    .rear-glass:before { content: ""; position: absolute; inset: 0; background: linear-gradient(75deg, rgba(255,255,255,.36), transparent 24%, transparent 72%, rgba(255,255,255,.14)); }
+    .rear-mirror-interior { position: absolute; inset: 0; transform: scaleX(-1); transform-origin: center; transform-style: preserve-3d; overflow: hidden; }
+    .rear-rail { position: absolute; top: 7%; left: 10%; right: 10%; height: 8px; border-radius: 99px; background: #773270; box-shadow: 0 2px 0 rgba(255,255,255,.45); }
+    .rear-cable { position: absolute; left: 50%; top: 8%; width: 5px; height: 43%; transform: translateX(-50%); border-radius: 4px; background: linear-gradient(90deg,#654067,#f6d4e7,#654067); }
+    .rear-claw { position: absolute; left: 50%; top: 42%; width: 17%; aspect-ratio: 1; transform: translateX(-50%); border-radius: 50%; background: radial-gradient(circle at 33% 28%, #fff3fb 0 10%, #df93c8 11% 34%, #a23d84 35% 100%); box-shadow: 0 4px 0 #71306a, 0 6px 10px rgba(70,26,72,.22); }
+    .rear-claw:before, .rear-claw:after { content: ""; position: absolute; top: 60%; width: 22%; height: 54%; border: 4px solid #a23d84; border-top: 0; border-radius: 0 0 80% 80%; }
+    .rear-claw:before { left: -10%; transform: rotate(28deg); } .rear-claw:after { right: -10%; transform: rotate(-28deg); }
+    .rear-chute { position: absolute; left: 10%; right: 10%; bottom: 8%; height: 15%; border-radius: 4px 4px 19px 19px; background: #963678; box-shadow: inset 0 3px 0 rgba(255,255,255,.14); }
+    .rear-chute:after { content: "PRIZE CHUTE"; position: absolute; left: 0; right: 0; top: 42%; color: #f9c8e1; text-align: center; font-size: 7px; font-weight: 900; letter-spacing: 1px; }
+    .machine.rear-view .machine-back { transform: rotateY(180deg) translateZ(25px); z-index: 20; }
+    .machine.rear-view > .machine-depth, .machine.rear-view > .machine-shadow, .machine.rear-view > .cabinet, .machine.rear-view > .glass, .machine.rear-view > .insert-slot, .machine.rear-view > .base, .machine.rear-view > .machine-tag { visibility: hidden; }
+    .machine-shadow { position: absolute; bottom: -20px; left: 5%; width: 90%; height: 35px; background: rgba(25, 55, 90, .42); filter: blur(18px); border-radius: 50%; transform: translateZ(-40px); }
+    .cabinet { position: absolute; inset: 0; border-radius: 28px 28px 36px 36px; background: linear-gradient(90deg, var(--machine-pink-deep), var(--machine-pink) 25%, var(--machine-pink) 74%, #c05495); box-shadow: inset 11px 0 0 rgba(255,255,255,.15), inset -10px 0 0 rgba(116, 27, 83, .14), 0 23px 25px rgba(90, 38, 94, .18); transform: translateZ(3px); z-index: 1; }
+    .cabinet:before { content: ""; position: absolute; left: 6%; right: 6%; top: 3%; height: 10%; border-radius: 18px; background: #f47dba; box-shadow: inset 0 -5px 0 rgba(155, 49, 111, .15); }
+    .cabinet:after { content: "BEAR DROP"; position: absolute; top: 5.2%; left: 0; right: 0; text-align: center; color: #fff6fc; font-size: clamp(13px, 2.1vw, 19px); font-weight: 1000; letter-spacing: 2.5px; text-shadow: 0 2px 0 #b74788; }
+    .glass { position: absolute; left: 10%; right: 10%; top: 15%; height: 59%; border: 9px solid #a73f84; border-radius: 13px 13px 22px 22px; background: linear-gradient(135deg, rgba(221, 249, 255, .67), rgba(147, 211, 238, .24) 45%, rgba(255,255,255,.38)); box-shadow: inset 0 0 0 2px rgba(255,255,255,.42), inset 12px 0 25px rgba(255,255,255,.18), 0 8px 0 rgba(105, 36, 108, .4); transform: translateZ(13px); transform-style: preserve-3d; overflow: hidden; z-index: 3; }
+    .glass:before { content: ""; position: absolute; inset: 0; background: linear-gradient(105deg, rgba(255,255,255,.44), transparent 20%, transparent 69%, rgba(255,255,255,.17)); pointer-events: none; }
+    .scene-floor { position: absolute; left: -8%; right: -8%; bottom: -5%; height: 35%; background: linear-gradient(180deg, #d99fc0, #bd639f); border-top: 2px solid rgba(255,255,255,.35); transform: perspective(200px) rotateX(54deg) translateZ(-4px); transform-origin: bottom; }
+    .scene-floor:after { content: ""; position: absolute; left: 9%; right: 9%; top: 10%; bottom: 16%; background: radial-gradient(ellipse, rgba(120, 50, 111, .22), transparent 63%); border-radius: 50%; }
+    .back-stars { position: absolute; inset: 0; background-image: radial-gradient(circle, rgba(255,255,255,.9) 0 2px, transparent 3px); background-size: 67px 61px; opacity: .25; transform: translateZ(-10px); }
+    .rail { position: absolute; top: 6%; left: 10%; right: 10%; height: 8px; border-radius: 99px; background: #8c4080; box-shadow: 0 2px 0 rgba(255,255,255,.45), 0 4px 5px rgba(84, 33, 97, .27); transform: translateZ(30px); z-index: 4; }
+    .rail:after { content: ""; position: absolute; left: 8%; right: 8%; top: 1px; height: 3px; border-radius: 99px; background: #f7c2df; }
+    .prize { position: absolute; z-index: 2; transform-style: preserve-3d; transition: filter .25s, transform .55s ease; filter: drop-shadow(5px 7px 3px rgba(76, 37, 67, .25)); }
+    .prize.bear { left: 38%; bottom: 9%; width: 18%; aspect-ratio: .8; --fur: #d89157; }
+    .ear { position: absolute; width: 39%; aspect-ratio: 1; top: 3%; border-radius: 50%; background: linear-gradient(145deg, #efb27c, var(--fur) 62%, #b56942); box-shadow: inset 4px 4px 0 rgba(255,255,255,.18), 4px 5px 0 rgba(130, 68, 48, .25); transform: translateZ(6px); }
+    .ear:after { content: ""; position: absolute; inset: 24%; border-radius: 50%; background: #efa97a; }
+    .ear.left { left: 3%; } .ear.right { right: 3%; }
+    .bear-head { position: absolute; left: 7%; right: 7%; top: 12%; aspect-ratio: .93; border-radius: 48% 48% 44% 44%; background: linear-gradient(135deg, #efb078, #d48651 66%, #ad603f); box-shadow: inset -7px -6px 0 rgba(119, 61, 43, .2), inset 5px 4px 0 rgba(255,255,255,.23), 4px 7px 0 rgba(111, 57, 48, .2); transform: translateZ(8px); }
+    .bear-eye { position: absolute; top: 35%; width: 11%; aspect-ratio: 1; border-radius: 50%; background: #3c2940; } .bear-eye.left { left: 27%; } .bear-eye.right { right: 27%; }
+    .bear-muzzle { position: absolute; left: 29%; right: 29%; bottom: 13%; height: 29%; border-radius: 48%; background: #f4bf8b; }
+    .bear-nose { position: absolute; left: 39%; top: 28%; width: 22%; height: 20%; border-radius: 50%; background: #754441; }
+    .bear-mouth { position: absolute; top: 45%; left: 48%; width: 5px; height: 10px; border-left: 2px solid #754441; border-bottom: 2px solid #754441; transform: rotate(-45deg); }
+    .bear-body { position: absolute; left: 12%; right: 12%; top: 58%; bottom: -6%; border-radius: 47% 47% 40% 40%; background: linear-gradient(135deg, #e3a069, #c9794b 67%, #a95b3f); box-shadow: inset 0 -8px 0 rgba(112, 57, 42, .2), inset 5px 4px 0 rgba(255,255,255,.15), 5px 8px 0 rgba(111, 57, 48, .2); transform: translateZ(3px); }
+    .bear-belly { position: absolute; width: 45%; height: 34%; top: 28%; left: 28%; border-radius: 50%; background: #f5bf88; }
+    .prize.ball { left: 11%; bottom: 8%; width: 16%; aspect-ratio: 1; border-radius: 50%; background: radial-gradient(circle at 28% 22%, #fff 0 9%, transparent 10%), linear-gradient(140deg,#fff 10%,#92d4f1 11% 31%,#fff 32% 47%,#ff879f 48% 70%,#fff 71%); box-shadow: inset -8px -7px 0 rgba(65, 97, 164, .22), 5px 6px 0 rgba(80, 68, 125, .19); transform: translateZ(6px); }
+    .prize.duck { left: 67%; bottom: 8%; width: 14%; aspect-ratio: .86; background: linear-gradient(135deg, #ffe47a, #ffd554 63%, #e9a834); border-radius: 50% 50% 38% 38%; box-shadow: inset -7px -7px 0 rgba(187, 124, 27, .2), 5px 6px 0 rgba(80, 68, 125, .17); transform: translateZ(6px); }
+    .prize.duck:before { content: ""; position: absolute; width: 40%; height: 17%; top: 34%; right: -20%; border-radius: 10px 50% 50% 10px; background: #ed9c38; }
+    .prize.duck:after { content: "•  •"; position: absolute; left: 27%; top: 24%; color: #554037; font-size: 9px; letter-spacing: 2px; }
+    .claw-rig { position: absolute; left: 50%; top: 5%; width: 46%; height: 67%; transform: translateX(calc(-50% + var(--claw-x))) translateY(var(--claw-y)) translateZ(calc(55px + var(--claw-depth))); transform-style: preserve-3d; transition: transform .38s cubic-bezier(.2,.78,.2,1); z-index: 5; }
+    .claw-rig.is-dropping { animation: dropRig .88s ease-in-out; }
+    @keyframes dropRig { 0%,100% { margin-top: 0; } 45% { margin-top: 46%; } }
+    .cable { width: 6px; height: 40%; margin: 0 auto; background: linear-gradient(90deg,#6f416c,#f5d4e4,#6f416c); border-radius: 4px; }
+    .claw-head { position: absolute; left: 50%; top: 38%; width: 36%; aspect-ratio: 1; transform: translateX(-50%) translateZ(8px); border-radius: 50%; background: radial-gradient(circle at 35% 30%, #fff3fb 0 10%, #e9a6d1 11% 34%, #b94e94 35% 78%, #7f2f70 100%); box-shadow: 0 5px 0 #853472, 7px 8px 0 rgba(86, 35, 91, .25), 0 6px 10px rgba(70,26,72,.25); }
+    .claw-head:after { content: ""; position: absolute; width: 36%; height: 18%; left: 32%; top: 38%; border-radius: 50%; background: #fbd2ec; box-shadow: inset 0 -2px 0 #c76aa9; }
+    .finger { position: absolute; top: 63%; width: 18%; height: 31%; border: 5px solid #b14b8f; border-top: 0; border-radius: 0 0 80% 80%; transform-origin: 50% 0; background: linear-gradient(90deg, #8d367d 0 25%, #f4a5d0 26% 70%, #8d367d 71%); box-shadow: 4px 4px 0 rgba(93, 35, 91, .24); transform-style: preserve-3d; }
+    .finger.left { left: 26%; transform: rotate(29deg); } .finger.right { right: 26%; transform: rotate(-29deg); }
+    .finger.center { left: 41%; top: 66%; height: 28%; transform: rotate(180deg); }
+    .insert-slot { position: absolute; left: 10%; right: 10%; bottom: 8%; height: 15%; border-radius: 4px 4px 19px 19px; background: #ac3f83; box-shadow: inset 0 3px 0 rgba(255,255,255,.14); }
+    .insert-slot:after { content: "PRIZE CHUTE"; position: absolute; left: 0; right: 0; top: 42%; color: #f9c8e1; text-align: center; font-size: 7px; font-weight: 900; letter-spacing: 1px; }
+    .base { position: absolute; left: 0; right: 0; bottom: 0; height: 15%; border-radius: 0 0 30px 30px; background: linear-gradient(#f27ebb, #c45798); box-shadow: inset 0 5px 0 rgba(255,255,255,.13); }
+    .base-controls { position: absolute; left: 13%; top: 24%; width: 74%; height: 45%; display: flex; justify-content: center; align-items: center; gap: 10%; }
+    .base-button { width: 22px; height: 22px; border: 0; border-radius: 50%; background: #7c3977; box-shadow: inset 0 3px 0 rgba(255,255,255,.28), 0 2px 0 #6a2d66; }
+    .base-button.yellow { background: #ffd558; box-shadow: inset 0 3px 0 rgba(255,255,255,.35), 0 2px 0 #d19d2e; }
+    .base-slot { width: 29%; height: 12px; border-radius: 99px; background: #7d3978; }
+    .shine { position: absolute; left: 16%; top: 19%; width: 4%; height: 42%; border-radius: 99px; background: rgba(255,255,255,.48); transform: rotate(8deg); z-index: 3; }
+    .machine-tag { position: absolute; left: 50%; bottom: -16px; z-index: 5; transform: translateX(-50%); padding: 7px 11px; border-radius: 999px; background: white; box-shadow: 0 7px 16px rgba(38, 49, 93, .12); white-space: nowrap; color: var(--muted); font-size: 10px; font-weight: 900; letter-spacing: .7px; }
+
+    .control-card { padding: 22px; display: flex; flex-direction: column; }
+    .control-card h2 { margin: 0; font-size: 20px; letter-spacing: -.8px; }
+    .control-card .sub { margin: 5px 0 22px; color: var(--muted); font-size: 12px; line-height: 1.5; font-weight: 650; }
+    .status { min-height: 76px; display: flex; align-items: center; gap: 12px; padding: 14px; border: 1px solid #f3e7b9; border-radius: 16px; background: #fffaf0; }
+    .status-icon { width: 38px; height: 38px; display: grid; place-items: center; flex: 0 0 auto; border-radius: 12px; background: var(--yellow); font-size: 20px; }
+    .status strong { display:block; margin-bottom: 3px; font-size: 12px; } .status span { color: var(--muted); font-size: 11px; line-height: 1.35; }
+    .section-label { display:flex; justify-content:space-between; align-items:center; margin: 23px 0 9px; color: var(--muted); font-size: 10px; font-weight: 900; text-transform: uppercase; letter-spacing: 1.45px; }
+    .section-label .hint { font-size: 10px; letter-spacing: 0; text-transform:none; font-weight: 700; }
+    .view-tabs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+    .view-btn { min-height: 48px; padding: 5px 4px; border: 1px solid var(--line); border-radius: 12px; background: white; cursor: pointer; color: var(--muted); font-size: 10px; font-weight: 800; transition: .2s ease; }
+    .view-btn span { display:block; margin-bottom: 4px; font-size: 17px; filter: grayscale(1); opacity: .72; } .view-btn:hover { border-color: #f4a6c6; transform: translateY(-2px); } .view-btn.active { border-color: var(--pink); background: #fff3f8; color: var(--pink-dark); box-shadow: 0 4px 9px rgba(249,104,155,.13); } .view-btn.active span { filter: none; opacity: 1; }
+    .joystick-area { display: flex; align-items:center; justify-content: center; gap: 24px; padding: 9px 0 3px; }
+    .joystick { position: relative; width: 104px; height: 104px; display:grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3,1fr); gap: 4px; padding: 8px; border-radius: 50%; background: #f2efff; border: 1px solid #e3defe; }
+    .joystick:before { content:""; position:absolute; width:40px; height:40px; top:32px; left:32px; border-radius:50%; background:#cbc4ef; box-shadow: inset 0 5px 0 rgba(255,255,255,.45), 0 4px 0 #ada4da; }
+    .dir-btn { position:relative; z-index:2; display:grid; place-items:center; border:0; background:transparent; color: #7370a4; cursor:pointer; border-radius:8px; font-size:17px; } .dir-btn:hover { background:rgba(255,255,255,.68); color:var(--pink-dark); } .dir-btn.up { grid-column:2; grid-row:1; } .dir-btn.left { grid-column:1; grid-row:2; } .dir-btn.right { grid-column:3; grid-row:2; } .dir-btn.down { grid-column:2; grid-row:3; }
+    .joystick-copy { max-width: 100px; color: var(--muted); font-size: 11px; line-height: 1.4; font-weight: 700; } .key { display:inline-grid; place-items:center; min-width:19px; height:18px; margin-top:7px; border:1px solid #dfe1ec; border-radius:5px; background:white; color:#8a91ad; font-size:10px; font-weight:900; }
+    .drop-btn { width: 100%; margin-top: 17px; padding: 16px 18px; border: 0; border-radius: 15px; background: var(--pink); color: white; cursor: pointer; font-size: 13px; font-weight: 900; box-shadow: 0 5px 0 #d54d7f, 0 10px 18px rgba(249,104,155,.2); transition: .16s ease; } .drop-btn small { margin-left: 5px; opacity: .86; font-size: 10px; font-weight: 800; } .drop-btn:hover { background:#f45b91; transform: translateY(-2px); } .drop-btn:active { transform:translateY(3px); box-shadow:0 2px 0 #d54d7f; } .drop-btn:disabled { opacity:.65; cursor:not-allowed; transform:none; }
+    .timing-panel { margin-top: 13px; padding: 12px; border: 1px solid #f2c8d8; border-radius: 15px; background: #fff4f8; }
+    .machine-card > .timing-panel { position: absolute; left: 22px; bottom: 22px; width: min(340px, calc(100% - 44px)); margin: 0; z-index: 25; box-shadow: 0 12px 28px rgba(49, 34, 87, .22); backdrop-filter: blur(8px); }
+    .machine-card > .drop-btn { position: absolute; top: 78px; right: 22px; width: 170px; margin: 0; z-index: 25; }
+    .machine-card.timing-active > .drop-btn { visibility: hidden; }
+    .timing-panel[hidden] { display: none; }
+    .timing-copy { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 9px; color: var(--pink-dark); font-size: 10px; font-weight: 900; text-transform: uppercase; letter-spacing: .85px; }
+    .timing-copy span { color: #9d7790; font-size: 9px; text-transform: none; letter-spacing: 0; }
+    .timing-bar { position: relative; height: 18px; display: grid; grid-template-columns: 40% 20% 40%; overflow: hidden; border: 2px solid white; border-radius: 99px; box-shadow: 0 2px 5px rgba(120, 50, 90, .18); }
+    .timing-bar .red { background: #ed6d7f; } .timing-bar .green { background: #5bd69b; }
+    .timing-pointer { position: absolute; top: -5px; bottom: -5px; left: 0%; width: 4px; border-radius: 99px; background: #fff; box-shadow: 0 0 0 2px #812f71, 0 2px 7px rgba(58, 21, 73, .4); transform: translateX(-50%); }
+    .release-btn { width: 100%; margin-top: 10px; padding: 9px 12px; border: 0; border-radius: 10px; background: #7f3b7b; color: white; cursor: pointer; font-size: 10px; font-weight: 900; letter-spacing: .4px; box-shadow: 0 3px 0 #5b2c5d; } .release-btn:hover { background: #6e2f70; }
+    .stats { display:grid; grid-template-columns:repeat(2,1fr); gap:8px; margin-top:10px; } .stat { padding: 11px; border:1px solid var(--line); border-radius:13px; background:#fff; } .stat-label { display:block; color:var(--muted); font-size:9px; text-transform:uppercase; letter-spacing:1px; font-weight:900; } .stat-value { display:block; margin-top:3px; color:var(--navy); font-size:19px; font-weight:1000; }
+    .play-again { width: 100%; margin-top: 10px; padding: 12px 15px; border: 1px solid #f2b0ca; border-radius: 13px; background: #fff3f8; color: var(--pink-dark); cursor: pointer; font-size: 11px; font-weight: 900; letter-spacing: .45px; transition: .18s ease; } .play-again:hover { background: #ffe5f0; transform: translateY(-2px); }
+    .play-again[hidden] { display: none; }
+    .tip { margin-top:auto; padding-top: 23px; display:flex; gap:8px; color:#8490b3; font-size:10px; line-height:1.45; font-weight:650; } .tip b { color:var(--pink-dark); }
+    .win .status { border-color:#bdebd4; background:#effcf5; } .win .status-icon { background:#a4e8c7; } .win .status strong { color:#25865d; }
+    .prize.being-held { z-index: 9; transform: translate3d(var(--hold-x), var(--hold-y), 40px) scale(.72) !important; transition: transform .65s cubic-bezier(.2,.8,.2,1), filter .3s; filter: brightness(1.08) drop-shadow(7px 9px 4px rgba(76, 37, 67, .28)); }
+    .prize.being-held.caught { animation: carriedToChute .8s ease forwards; }
+    .prize.caught { animation: caught .8s ease forwards; } @keyframes caught { 45% { transform: translateZ(20px) translateY(-15px) scale(1.12); filter: brightness(1.13) drop-shadow(5px 7px 3px rgba(76, 37, 67, .25)); } 100% { transform: translateZ(20px) translateY(70px) scale(.35); opacity: 0; } }
+    @keyframes carriedToChute { 0% { transform: translate3d(var(--hold-x), var(--hold-y), 40px) scale(.72); opacity: 1; } 45% { transform: translate3d(var(--hold-x), calc(var(--hold-y) + 18px), 40px) scale(.84); } 100% { transform: translate3d(var(--hold-x), calc(var(--hold-y) + 145px), 20px) scale(.3); opacity: 0; } }
+    .machine-card.shake { animation: shake .34s ease; } @keyframes shake { 25% { transform:translateX(-5px); } 75% { transform:translateX(5px); } }
+    @media (max-width: 900px) { .app { padding: 20px 17px 28px; } .hero { display:block; margin-top:26px; } .hero p { margin-top:15px; } .game-shell { grid-template-columns: 1fr; } .machine-card { min-height: 600px; } .control-card { min-height: auto; } .tip { margin-top:22px; } }
+    @media (max-width: 520px) { .topbar { align-items:flex-start; } .coin-pill { font-size:10px; } h1 { letter-spacing:-2px; } .machine-card { padding:15px; min-height:520px; border-radius:22px; } .machine-stage { min-height:430px; } .machine { width:86%; } .machine-card > .drop-btn { left:15px; right:15px; top:74px; width:auto; } .machine-card > .timing-panel { left:15px; right:15px; bottom:15px; width:auto; } .control-card { padding:17px; border-radius:22px; } .joystick-area { gap:16px; } }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header class="topbar">
+      <div class="brand"><div class="brand-mark">✦</div><div class="brand-copy"><strong>Bear Drop Arcade</strong><span>tiny wins, big smiles</span></div></div>
+      <div class="coin-pill"><span class="coin">¢</span><span>Balance <span class="balance" id="balance">$50.00</span></span></div>
+    </header>
+
+    <section class="hero">
+      <div><p class="eyebrow">Sally’s lucky try</p><h1>Can you grab the<br><span style="color:var(--pink)">teddy bear?</span></h1></div>
+      <p>Move the claw into position, switch your view, then press <b>DROP CLAW</b>. Easy does it — the bear is waiting.</p>
+    </section>
+
+    <section class="game-shell">
+      <div class="machine-card" id="machineCard">
+        <div class="machine-head"><h2>Prize chamber</h2><div class="live-badge"><i class="live-dot"></i> arcade cam online</div></div>
+        <div class="machine-stage">
+          <div class="world-sun"></div>
+          <div class="world-cloud cloud-one"></div>
+          <div class="world-cloud cloud-two"></div>
+          <div class="baseplate"><div class="baseplate-shadow"></div></div>
+          <div class="machine" id="machine">
+            <div class="machine-back" aria-hidden="true"><div class="rear-glass"><div class="rear-rail"></div><div class="rear-cable"></div><div class="rear-claw"></div></div><div class="rear-chute"></div></div>
+            <div class="machine-depth" aria-hidden="true"><div class="depth-back"></div><div class="depth-left"></div><div class="depth-right"></div><div class="depth-top"></div></div>
+            <div class="machine-shadow"></div><div class="cabinet"></div><div class="glass"><div class="back-stars"></div><div class="scene-floor"></div>
+              <div class="rail"></div>
+              <div class="prize ball"></div>
+              <div class="prize duck"></div>
+              <div class="prize bear" id="bear"><div class="ear left"></div><div class="ear right"></div><div class="bear-head"><i class="bear-eye left"></i><i class="bear-eye right"></i><div class="bear-muzzle"><i class="bear-nose"></i><i class="bear-mouth"></i></div></div><div class="bear-body"><div class="bear-belly"></div></div></div>
+              <div class="claw-rig" id="clawRig"><div class="cable"></div><div class="claw-head"></div><div class="finger left"></div><div class="finger right"></div><div class="finger center"></div></div>
+              <div class="shine"></div>
+            </div>
+            <div class="insert-slot"></div><div class="base"><div class="base-controls"><div class="base-button yellow"></div><div class="base-slot"></div><div class="base-button"></div></div></div>
+            <div class="machine-tag">★ BEAR DROP ★</div>
+          </div>
+        </div>
+        <button class="drop-btn" id="dropBtn">DROP CLAW <span aria-hidden="true">↓</span><small>$0.50</small></button>
+        <div class="timing-panel" id="timingPanel" hidden><div class="timing-copy"><span>Grip check</span><span>hit the small green target</span></div><div class="timing-bar" aria-label="Red green red timing bar"><div class="red"></div><div class="green"></div><div class="red"></div><div class="timing-pointer" id="timingPointer"></div></div><button class="release-btn" id="releaseBtn">RELEASE PRIZE <span aria-hidden="true">SPACE</span></button></div>
+      </div>
+
+      <aside class="control-card" id="controlCard">
+        <h2>Make your move</h2><p class="sub">Line up the claw with the teddy’s belly. The closer, the better!</p>
+        <div class="status" id="status"><div class="status-icon" id="statusIcon">🐻</div><div><strong id="statusTitle">The bear is ready!</strong><span id="statusText">Use the arrows to steer the claw above the prize.</span></div></div>
+        <div class="section-label"><span>Camera angle</span><span class="hint">tap to peek around</span></div>
+        <div class="view-tabs" role="group" aria-label="Camera angle"><button class="view-btn active" data-view="front"><span>▣</span>Front</button><button class="view-btn" data-view="left"><span>↺</span>Orbit left</button><button class="view-btn" data-view="right"><span>↻</span>Orbit right</button><button class="view-btn" data-view="behind"><span>↕</span>Behind</button></div>
+        <div class="section-label"><span>Claw controls</span><span class="hint">or use arrow keys</span></div>
+        <div class="joystick-area"><div class="joystick" aria-label="Claw movement controls"><button class="dir-btn up" data-dir="up" aria-label="Move claw forward">↑</button><button class="dir-btn left" data-dir="left" aria-label="Move claw left">←</button><button class="dir-btn right" data-dir="right" aria-label="Move claw right">→</button><button class="dir-btn down" data-dir="down" aria-label="Move claw backward">↓</button></div><div class="joystick-copy">Small taps make precise moves.<br><span class="key">←</span> <span class="key">↑</span> <span class="key">↓</span> <span class="key">→</span></div></div>
+        <div class="stats"><div class="stat"><span class="stat-label">Attempts</span><span class="stat-value" id="attempts">0</span></div><div class="stat"><span class="stat-label">Best score</span><span class="stat-value" id="score">—</span></div></div>
+        <button class="play-again" id="playAgainBtn" hidden>PLAY AGAIN <span aria-hidden="true">↻</span></button>
+        <div class="tip">💡 <span><b>Tip:</b> the teddy is slightly left of center. You have plenty of time to line it up.</span></div>
+      </aside>
+    </section>
+  </main>
+
+  <script>
+    const root = document.documentElement;
+    const machine = document.getElementById('machine');
+    const clawRig = document.getElementById('clawRig');
+    const bear = document.getElementById('bear');
+    const machineCard = document.getElementById('machineCard');
+    const machineStage = document.querySelector('.machine-stage');
+    const controlCard = document.getElementById('controlCard');
+    const dropBtn = document.getElementById('dropBtn');
+    const attemptsEl = document.getElementById('attempts');
+    const scoreEl = document.getElementById('score');
+    const balanceEl = document.getElementById('balance');
+    const statusIcon = document.getElementById('statusIcon');
+    const statusTitle = document.getElementById('statusTitle');
+    const statusText = document.getElementById('statusText');
+    const timingPanel = document.getElementById('timingPanel');
+    const timingPointer = document.getElementById('timingPointer');
+    const releaseBtn = document.getElementById('releaseBtn');
+    const playAgainBtn = document.getElementById('playAgainBtn');
+    const frontGlass = document.querySelector('.glass');
+    const rearGlass = document.querySelector('.rear-glass');
+    const rearMirrorInterior = document.createElement('div');
+    rearMirrorInterior.className = 'rear-mirror-interior';
+    [...frontGlass.children].forEach(child => {
+      const clone = child.cloneNode(true);
+      clone.querySelectorAll('[id]').forEach(element => element.removeAttribute('id'));
+      rearMirrorInterior.appendChild(clone);
+    });
+    rearGlass.replaceChildren(rearMirrorInterior);
+
+    const position = { x: 18, z: -18 };
+    let attempts = 0;
+    let balance = 50;
+    const playCost = 0.5;
+    let won = false;
+    let busy = false;
+    let cameraTurn = 0;
+    let lastPointerX = 0;
+    let isDraggingCamera = false;
+    let skillActive = false;
+    let skillRaf = 0;
+    let skillStart = 0;
+    let skillItem = null;
+    const items = [
+      { name: 'teddy bear', emoji: '🐻', className: 'bear', x: -6, z: 5 },
+      { name: 'striped ball', emoji: '⚽', className: 'ball', x: -24, z: 8 },
+      { name: 'rubber duck', emoji: '🦆', className: 'duck', x: 24, z: 8 }
+    ];
+    function renderBalance() {
+      balanceEl.textContent = '$' + balance.toFixed(2);
+    }
+
+    function renderPosition() {
+      root.style.setProperty('--claw-x', position.x + '%');
+      root.style.setProperty('--claw-z', position.z + '%');
+      // A tiny vertical cue makes forward/back movement readable without losing the 3D silhouette.
+      root.style.setProperty('--claw-y', (position.z * .10) + 'px');
+      root.style.setProperty('--claw-depth', (position.z * 2.2) + 'px');
+    }
+    function move(dir) {
+      if (busy || won) return;
+      const step = 12;
+      if (dir === 'left') position.x = Math.max(-34, position.x - step);
+      if (dir === 'right') position.x = Math.min(34, position.x + step);
+      if (dir === 'up') position.z = Math.max(-28, position.z - step);
+      if (dir === 'down') position.z = Math.min(28, position.z + step);
+      renderPosition();
+      statusTitle.textContent = 'Nice and steady…';
+      statusText.textContent = 'Keep nudging until the claw is over the teddy.';
+      statusIcon.textContent = '🎯';
+    }
+    function renderCamera(activeButton) {
+      root.style.setProperty('--view-turn', cameraTurn + 'deg');
+      const distanceFromBack = Math.abs(((cameraTurn - 180 + 540) % 360) - 180);
+      machine.classList.toggle('rear-view', distanceFromBack < 70);
+      if (activeButton) {
+        document.querySelectorAll('.view-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.view === activeButton));
+      }
+    }
+    function orbitCamera(amount, activeButton = null) {
+      cameraTurn = (cameraTurn + amount) % 360;
+      if (cameraTurn < 0) cameraTurn += 360;
+      renderCamera(activeButton);
+    }
+    function setView(view) {
+      if (view === 'left') return orbitCamera(-25, 'left');
+      if (view === 'right') return orbitCamera(25, 'right');
+      cameraTurn = view === 'behind' ? 180 : 0;
+      renderCamera(view);
+    }
+    function findTouchingItem() {
+      return items.find(item => Math.hypot(position.x - item.x, position.z - item.z) < 21);
+    }
+    function findNearestItem() {
+      return items.reduce((nearest, item) => {
+        const distance = Math.hypot(position.x - item.x, position.z - item.z);
+        return distance < nearest.distance ? { item, distance } : nearest;
+      }, { item: items[0], distance: Infinity }).item;
+    }
+    function finishDropFailure(title, message) {
+      machineCard.classList.add('shake');
+      machineCard.classList.remove('timing-active');
+      statusIcon.textContent = '🐾';
+      statusTitle.textContent = title;
+      statusText.textContent = message;
+      dropBtn.disabled = false;
+      busy = false;
+      setTimeout(() => machineCard.classList.remove('shake'), 350);
+    }
+    function liftPrizeIntoClaw(item) {
+      const visiblePrizes = [...document.querySelectorAll('.prize.' + item.className)].filter(prize => {
+        const box = prize.getBoundingClientRect();
+        return getComputedStyle(prize).visibility !== 'hidden' && box.width > 0 && box.height > 0;
+      });
+      const visibleClaw = [...machine.querySelectorAll('.claw-rig')].find(claw => {
+        const box = claw.getBoundingClientRect();
+        return getComputedStyle(claw).visibility !== 'hidden' && box.width > 0 && box.height > 0;
+      });
+      if (!visibleClaw) return;
+      const clawBox = visibleClaw.getBoundingClientRect();
+      visiblePrizes.forEach(prize => {
+        const prizeBox = prize.getBoundingClientRect();
+        const targetX = clawBox.left + clawBox.width / 2;
+        const targetY = clawBox.top + clawBox.height * .64;
+        prize.style.setProperty('--hold-x', (targetX - (prizeBox.left + prizeBox.width / 2)) + 'px');
+        prize.style.setProperty('--hold-y', (targetY - (prizeBox.top + prizeBox.height / 2)) + 'px');
+        prize.classList.add('being-held');
+      });
+    }
+    function startTimingCheck(item) {
+      skillItem = item;
+      skillActive = true;
+      skillStart = performance.now();
+      liftPrizeIntoClaw(item);
+      machineCard.classList.add('timing-active');
+      timingPanel.hidden = false;
+      statusIcon.textContent = item.emoji;
+      statusTitle.textContent = 'Grip secured!';
+      statusText.textContent = `The grip is secure. Green gives a perfect score, but the prize will not slip.`;
+      const animatePointer = now => {
+        if (!skillActive) return;
+      const cycle = 820;
+        const phase = ((now - skillStart) % cycle) / cycle;
+        const positionOnBar = phase < .5 ? phase * 2 : 2 - phase * 2;
+        timingPointer.style.left = (positionOnBar * 100) + '%';
+        skillRaf = requestAnimationFrame(animatePointer);
+      };
+      skillRaf = requestAnimationFrame(animatePointer);
+    }
+    function releasePrize() {
+      if (!skillActive) return;
+      const pointerPosition = parseFloat(timingPointer.style.left) || 0;
+      skillActive = false;
+      cancelAnimationFrame(skillRaf);
+      timingPanel.hidden = true;
+      machineCard.classList.remove('timing-active');
+      const landedOnGreen = pointerPosition >= 40 && pointerPosition <= 60;
+      if (landedOnGreen) {
+        won = true;
+        document.querySelectorAll('.prize.' + skillItem.className).forEach(prize => prize.classList.add('caught'));
+        controlCard.classList.add('win');
+        scoreEl.textContent = Math.max(1, 4 - attempts) + '★';
+        statusIcon.textContent = '🎉';
+        statusTitle.textContent = `You got the ${skillItem.name}!`;
+        statusText.textContent = `Perfect timing — Sally gets a ${skillItem.name}.`;
+        dropBtn.textContent = 'PRIZE CAUGHT ✓';
+        dropBtn.disabled = true;
+        playAgainBtn.hidden = false;
+      } else {
+        document.querySelectorAll('.prize.' + skillItem.className).forEach(prize => {
+          prize.classList.remove('being-held');
+          prize.style.removeProperty('--hold-x');
+          prize.style.removeProperty('--hold-y');
+        });
+        finishDropFailure('Missed the green!', 'The pointer landed on red, so the prize dropped back down. Try again.');
+      }
+    }
+    function resetGame() {
+      cancelAnimationFrame(skillRaf);
+      position.x = 18;
+      position.z = -18;
+      attempts = 0;
+      won = false;
+      busy = false;
+      skillActive = false;
+      skillItem = null;
+      clawRig.classList.remove('is-dropping');
+      machineCard.classList.remove('shake');
+      machineCard.classList.remove('timing-active');
+      controlCard.classList.remove('win');
+      timingPanel.hidden = true;
+      timingPointer.style.left = '0%';
+      document.querySelectorAll('.prize').forEach(prize => {
+        prize.classList.remove('being-held', 'caught');
+        prize.style.removeProperty('--hold-x');
+        prize.style.removeProperty('--hold-y');
+      });
+      attemptsEl.textContent = '0';
+      scoreEl.textContent = '—';
+      dropBtn.disabled = false;
+      dropBtn.innerHTML = 'DROP CLAW <span aria-hidden="true">↓</span><small>$0.50</small>';
+      playAgainBtn.hidden = true;
+      statusIcon.textContent = '🐻';
+      statusTitle.textContent = 'The bear is ready!';
+      statusText.textContent = 'Use the arrows to steer the claw above the prize.';
+      cameraTurn = 0;
+      renderCamera('front');
+      renderPosition();
+    }
+    function drop() {
+      if (busy || won || skillActive) return;
+      if (balance < playCost) {
+        statusIcon.textContent = '🪙';
+        statusTitle.textContent = 'Out of credits';
+        statusText.textContent = 'You need $0.50 to play again.';
+        dropBtn.disabled = true;
+        return;
+      }
+      balance = Math.round((balance - playCost) * 100) / 100;
+      renderBalance();
+      busy = true;
+      attempts += 1;
+      attemptsEl.textContent = attempts;
+      dropBtn.disabled = true;
+      statusIcon.textContent = '🫣';
+      statusTitle.textContent = 'Down it goes…';
+      statusText.textContent = 'Crossing fingers for a teddy-bear hug!';
+      clawRig.classList.add('is-dropping');
+      setTimeout(() => {
+        clawRig.classList.remove('is-dropping');
+        const touchingItem = findTouchingItem();
+        const item = touchingItem || findNearestItem();
+        if (!touchingItem) {
+          statusIcon.textContent = item.emoji;
+          statusTitle.textContent = `Nearest prize: ${item.name}`;
+          statusText.textContent = 'The claw grabbed the closest item in its reach.';
+        }
+        startTimingCheck(item);
+      }, 900);
+    }
+    document.querySelectorAll('[data-dir]').forEach(button => button.addEventListener('click', () => move(button.dataset.dir)));
+    document.querySelectorAll('[data-view]').forEach(button => button.addEventListener('click', () => setView(button.dataset.view)));
+    machineStage.addEventListener('pointerdown', event => {
+      isDraggingCamera = true;
+      lastPointerX = event.clientX;
+      machineStage.classList.add('is-dragging');
+      machineStage.setPointerCapture(event.pointerId);
+    });
+    machineStage.addEventListener('pointermove', event => {
+      if (!isDraggingCamera) return;
+      const delta = event.clientX - lastPointerX;
+      lastPointerX = event.clientX;
+      orbitCamera(delta * .55);
+    });
+    machineStage.addEventListener('pointerup', event => {
+      isDraggingCamera = false;
+      machineStage.classList.remove('is-dragging');
+      machineStage.releasePointerCapture(event.pointerId);
+    });
+    machineStage.addEventListener('pointercancel', () => {
+      isDraggingCamera = false;
+      machineStage.classList.remove('is-dragging');
+    });
+    dropBtn.addEventListener('click', drop);
+    releaseBtn.addEventListener('click', releasePrize);
+    playAgainBtn.addEventListener('click', resetGame);
+    document.addEventListener('keydown', event => {
+      const map = { ArrowLeft: 'left', ArrowRight: 'right', ArrowUp: 'up', ArrowDown: 'down' };
+      if (map[event.key]) { event.preventDefault(); move(map[event.key]); }
+      if (event.key.toLowerCase() === 'q') orbitCamera(-15, 'left');
+      if (event.key.toLowerCase() === 'e') orbitCamera(15, 'right');
+      if (skillActive && (event.key === ' ' || event.key === 'Enter')) { event.preventDefault(); releasePrize(); return; }
+      if (event.key === ' ' || event.key === 'Enter') { if (document.activeElement === dropBtn || event.key === ' ') drop(); }
+    });
+    renderPosition();
+  </script>
+</body>
+</html>
